@@ -23,7 +23,8 @@ import {
   AlertTriangle,
   Sparkles,
   MapPin,
-  Share2
+  Share2,
+  Bookmark
 } from 'lucide-react';
 
 interface RouteComparisonProps {
@@ -33,6 +34,8 @@ interface RouteComparisonProps {
   activeMode: ComparisonMode;
   onChangeMode: (mode: ComparisonMode) => void;
   preferences: UserPreferences;
+  onSaveRoute?: (route: RouteOption) => void;
+  savedRouteIds?: string[];
 }
 
 export const RouteComparison: React.FC<RouteComparisonProps> = ({
@@ -41,7 +44,9 @@ export const RouteComparison: React.FC<RouteComparisonProps> = ({
   onSelectRoute,
   activeMode,
   onChangeMode,
-  preferences
+  preferences,
+  onSaveRoute,
+  savedRouteIds = []
 }) => {
   const [expandedRouteId, setExpandedRouteId] = useState<string | null>(selectedRoute.id);
   const [shareToast, setShareToast] = useState(false);
@@ -169,13 +174,33 @@ export const RouteComparison: React.FC<RouteComparisonProps> = ({
                     <p className="text-xs text-slate-400">{route.summary}</p>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <div className="text-xl font-extrabold text-cyan-400 font-mono">
-                      {route.totalDurationMinutes} <span className="text-xs text-slate-400 font-normal">min</span>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="text-right">
+                      <div className="text-xl font-extrabold text-cyan-400 font-mono">
+                        {route.totalDurationMinutes} <span className="text-xs text-slate-400 font-normal">min</span>
+                      </div>
+                      <div className="text-sm font-semibold text-emerald-400 font-mono">
+                        ₹{route.totalCost}
+                      </div>
                     </div>
-                    <div className="text-sm font-semibold text-emerald-400 font-mono">
-                      ₹{route.totalCost}
-                    </div>
+
+                    {onSaveRoute && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSaveRoute(route);
+                        }}
+                        className={`p-2 rounded-xl border transition ${
+                          savedRouteIds.includes(route.id)
+                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm'
+                            : 'bg-slate-800/80 text-slate-400 border-slate-700/60 hover:text-white hover:bg-slate-700'
+                        }`}
+                        title={savedRouteIds.includes(route.id) ? "Saved to your profile" : "Bookmark this route to profile"}
+                      >
+                        <Bookmark className={`w-4 h-4 ${savedRouteIds.includes(route.id) ? 'fill-current text-cyan-400' : ''}`} />
+                      </button>
+                    )}
                   </div>
                 </div>
 

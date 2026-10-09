@@ -16,6 +16,9 @@ import { AuraAssistant } from './components/AuraAssistant';
 import { DisruptionManager } from './components/DisruptionManager';
 import { EmergencyModal } from './components/EmergencyModal';
 import { SettingsModal } from './components/SettingsModal';
+import { ProfileModal } from './components/ProfileModal';
+import { ContactModal } from './components/ContactModal';
+import { useAuth } from './context/AuthContext';
 
 import {
   Navigation,
@@ -33,13 +36,18 @@ import {
   Zap,
   ChevronRight,
   CheckCircle2,
-  TrendingDown
+  TrendingDown,
+  User,
+  Mail
 } from 'lucide-react';
 
 export default function App() {
+  const { user, savedRoutes, saveRoute } = useAuth();
+
   // Application View Mode: 'landing' (3D Hero) or 'planner' (Interactive Journey Hub)
   const [viewState, setViewState] = useState<'landing' | 'planner'>('landing');
   const [activeTab, setActiveTab] = useState<'overview' | 'comparison' | 'disruptions' | 'aura'>('overview');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Preferences State
   const [preferences, setPreferences] = useState<UserPreferences>({
@@ -63,6 +71,7 @@ export default function App() {
   // Modals
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const [showRecalculateToast, setShowRecalculateToast] = useState(false);
 
   // Derive origin and destination objects
@@ -303,6 +312,41 @@ export default function App() {
               <Settings className="w-4 h-4" />
             </button>
 
+            {/* Contact Us - Ayush Raj */}
+            <button
+              onClick={() => setIsContactOpen(true)}
+              className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-slate-200 transition flex items-center gap-1.5 group"
+              title="Contact Ayush Raj (ayushraj20062007@gmail.com)"
+            >
+              <Mail className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+              <span className="hidden md:inline text-xs font-semibold">Contact Us</span>
+            </button>
+
+            {/* Traveler Profile / Sign In */}
+            <button
+              onClick={() => setIsProfileOpen(true)}
+              className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-200 transition flex items-center gap-2 group"
+              title={user ? `Profile: ${user.displayName || user.email}` : "Sign In with Google"}
+            >
+              {user && user.photoURL ? (
+                <img 
+                  src={user.photoURL} 
+                  alt={user.displayName || 'Profile'} 
+                  className="w-5 h-5 rounded-full border border-cyan-400/60 object-cover"
+                />
+              ) : (
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${user ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400 group-hover:text-cyan-400'}`}>
+                  {user ? (user.displayName || user.email || 'U')[0].toUpperCase() : <User className="w-3.5 h-3.5" />}
+                </div>
+              )}
+              <span className="hidden sm:inline text-xs font-semibold">
+                {user ? (user.displayName?.split(' ')[0] || 'Profile') : 'Sign In'}
+              </span>
+              {user && savedRoutes.length > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              )}
+            </button>
+
             {/* Switch between Hero Landing & Planner */}
             {viewState === 'landing' ? (
               <button
@@ -522,7 +566,7 @@ export default function App() {
               {/* LEFT 7 COLS: 3D Layered Visualizer + Interactive Leaflet Map */}
               <div className="lg:col-span-7 space-y-6">
                 {/* 1. MANDATORY 3D JOURNEY VISUALIZER */}
-                <div className="space-y-2.5">
+                <div className="space-y-2.5 bg-slate-900/60 p-3 sm:p-4 rounded-3xl border border-slate-800/80 shadow-2xl backdrop-blur-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-white flex items-center gap-1.5 uppercase tracking-wider">
@@ -531,6 +575,10 @@ export default function App() {
                       </span>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-semibold">
                         WebGL Multi-Tier
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Forward Aligned
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-400 text-[11px] font-mono">
@@ -549,12 +597,13 @@ export default function App() {
                       <span>Jaipur CARTO Transit GIS Map</span>
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        Road & Metro Line Snapped
+                      <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-semibold flex items-center gap-1.5">
+                        <Navigation className="w-3 h-3 text-cyan-400 fill-current" />
+                        Turn-by-Turn GPS Guidance
                       </span>
-                      <span className="text-slate-400 font-mono text-[11px] hidden sm:inline-block">
-                        CARTO Voyager GIS
+                      <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold hidden sm:flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        Road & Metro Snapped
                       </span>
                     </div>
                   </div>
@@ -618,6 +667,8 @@ export default function App() {
                     activeMode={preferences.comparisonMode}
                     onChangeMode={(m) => handleUpdatePreferences({ comparisonMode: m })}
                     preferences={preferences}
+                    onSaveRoute={saveRoute}
+                    savedRouteIds={savedRoutes.map((r) => r.id)}
                   />
                 )}
 
@@ -663,6 +714,55 @@ export default function App() {
       </main>
 
       {/* ========================================================= */}
+      {/* FOOTER: WAYORA TRANSIT & CONTACT DEVELOPER                */}
+      {/* ========================================================= */}
+      <footer className="border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-md py-6 px-4 sm:px-6 lg:px-8 mt-12">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+          {/* Brand & Mission */}
+          <div className="flex items-center gap-3">
+            <ThreeBrandLogo className="w-8 h-8 rounded-xl overflow-hidden shrink-0" />
+            <div>
+              <div className="font-bold text-white flex items-center gap-2">
+                <span>WAYORA</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                  Jaipur Multi-Modal
+                </span>
+              </div>
+              <p className="text-slate-400 text-[11px] mt-0.5">
+                Intelligent routing across Metro Pink Line, JCTSL buses & pedestrian corridors
+              </p>
+            </div>
+          </div>
+
+          {/* Contact Developer & Email Link Button */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <span className="text-slate-400 text-[11px]">Developer & Engineering:</span>
+              <p className="text-white font-semibold">Ayush Raj</p>
+            </div>
+
+            {/* Direct Email Action Button */}
+            <a
+              href="mailto:ayushraj20062007@gmail.com?subject=WAYORA%20Jaipur%20Multi-Modal%20Inquiry"
+              className="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-cyan-500/20 flex items-center gap-2"
+              title="Compose email to ayushraj20062007@gmail.com"
+            >
+              <Mail className="w-4 h-4" />
+              <span>ayushraj20062007@gmail.com</span>
+            </a>
+
+            {/* Contact Modal Trigger */}
+            <button
+              onClick={() => setIsContactOpen(true)}
+              className="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-slate-200 text-xs font-semibold transition flex items-center gap-1.5"
+            >
+              <span>Contact Us</span>
+            </button>
+          </div>
+        </div>
+      </footer>
+
+      {/* ========================================================= */}
       {/* MODALS                                                    */}
       {/* ========================================================= */}
       <EmergencyModal
@@ -683,6 +783,21 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         preferences={preferences}
         onUpdatePreferences={handleUpdatePreferences}
+      />
+
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        onSelectSavedRoute={(originId, destinationId) => {
+          handleUpdatePreferences({ originId, destinationId });
+          setViewState('planner');
+          setActiveTab('overview');
+        }}
+      />
+
+      <ContactModal
+        isOpen={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
       />
     </div>
   );

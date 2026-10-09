@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all document operations
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation helper for UserProfile
+    function isValidUserProfile(data, userId) {
+      return data.userId == userId &&
+        data.userId is string &&
+        data.email is string &&
+        data.email.size() <= 256 &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128)) &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1024)) &&
+        (!('defaultOriginId' in data) || (data.defaultOriginId is string && data.defaultOriginId.size() <= 64)) &&
+        (!('defaultDestinationId' in data) || (data.defaultDestinationId is string && data.defaultDestinationId.size() <= 64)) &&
+        (!('preferredMode' in data) || (data.preferredMode is string && data.preferredMode.size() <= 32)) &&
+        (!('wheelchairAccessible' in data) || data.wheelchairAccessible is bool);
+    }
+
+    // Validation helper for SavedRoute
+    function isValidSavedRoute(data, userId) {
+      return data.userId == userId &&
+        data.userId is string &&
+        data.id is string &&
+        data.id.size() <= 128 &&
+        data.title is string &&
+        data.title.size() <= 128 &&
+        data.originId is string &&
+        data.originId.size() <= 64 &&
+        data.destinationId is string &&
+        data.destinationId.size() <= 64 &&
+        (!('originName' in data) || (data.originName is string && data.originName.size() <= 128)) &&
+        (!('destinationName' in data) || (data.destinationName is string && data.destinationName.size() <= 128)) &&
+        (!('durationMinutes' in data) || data.durationMinutes is number) &&
+        (!('fare' in data) || data.fare is number) &&
+        (!('categoryTag' in data) || (data.categoryTag is string && data.categoryTag.size() <= 64));
+    }
+
+    // User Profile (PII Isolated & Private)
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming(), userId) && incoming().userId == existing().userId;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // User's private bookmarked saved transit corridors
+      match /savedRoutes/{routeId} {
+        allow read: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(routeId) && isValidSavedRoute(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(routeId) && isValidSavedRoute(incoming(), userId) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(routeId);
+      }
+    }
+
+    // Connection testing endpoint
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

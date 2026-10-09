@@ -447,6 +447,8 @@ export const ThreeJourneyVisualizer: React.FC<ThreeJourneyVisualizerProps> = ({ 
     stepRing.position.y = 0.02;
     pedestrianModel.add(stepRing);
 
+    // Rotate model by -90 deg so that its front (+X) aligns with movingHolder's forward axis (+Z)
+    pedestrianModel.rotation.y = -Math.PI / 2;
     movingHolder.add(pedestrianModel);
 
     // ------------------------------------------
@@ -501,6 +503,15 @@ export const ThreeJourneyVisualizer: React.FC<ThreeJourneyVisualizerProps> = ({ 
     headlight.position.set(carLength / 2 + 0.3, 0.13, 0);
     metroTrainModel.add(headlight);
 
+    // Rear Red Position Markers
+    const trainTlMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const ttl1 = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), trainTlMat);
+    ttl1.position.set(-carLength / 2 - 0.02, 0.13, 0.09);
+    const ttl2 = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), trainTlMat);
+    ttl2.position.set(-carLength / 2 - 0.02, 0.13, -0.09);
+    metroTrainModel.add(ttl1);
+    metroTrainModel.add(ttl2);
+
     const beamGeo = new THREE.ConeGeometry(0.35, 1.8, 16);
     const beamMat = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
@@ -512,6 +523,8 @@ export const ThreeJourneyVisualizer: React.FC<ThreeJourneyVisualizerProps> = ({ 
     beam.position.set(carLength / 2 + 1.2, 0.13, 0);
     metroTrainModel.add(beam);
 
+    // Rotate model by -90 deg so that its front (+X) aligns with movingHolder's forward axis (+Z)
+    metroTrainModel.rotation.y = -Math.PI / 2;
     movingHolder.add(metroTrainModel);
 
     // ------------------------------------------
@@ -577,6 +590,17 @@ export const ThreeJourneyVisualizer: React.FC<ThreeJourneyVisualizerProps> = ({ 
     transitBusModel.add(bhl1);
     transitBusModel.add(bhl2);
 
+    // Twin Rear Red Taillights
+    const busTlMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const btl1 = new THREE.Mesh(busHlGeo, busTlMat);
+    btl1.position.set(-busBodyLength / 2 - 0.02, 0.12, 0.14);
+    const btl2 = new THREE.Mesh(busHlGeo, busTlMat);
+    btl2.position.set(-busBodyLength / 2 - 0.02, 0.12, -0.14);
+    transitBusModel.add(btl1);
+    transitBusModel.add(btl2);
+
+    // Rotate model by -90 deg so that its front (+X) aligns with movingHolder's forward axis (+Z)
+    transitBusModel.rotation.y = -Math.PI / 2;
     movingHolder.add(transitBusModel);
 
     // ------------------------------------------
@@ -643,6 +667,27 @@ export const ThreeJourneyVisualizer: React.FC<ThreeJourneyVisualizerProps> = ({ 
       cabModel.add(cWheel);
     });
 
+    // Front Xenon Headlights
+    const cabHlGeo = new THREE.SphereGeometry(0.035, 8, 8);
+    const cabHlMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const chl1 = new THREE.Mesh(cabHlGeo, cabHlMat);
+    chl1.position.set(cabLength / 2 + 0.015, 0.11, 0.12);
+    const chl2 = new THREE.Mesh(cabHlGeo, cabHlMat);
+    chl2.position.set(cabLength / 2 + 0.015, 0.11, -0.12);
+    cabModel.add(chl1);
+    cabModel.add(chl2);
+
+    // Rear Red Taillights
+    const cabTlMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const ctl1 = new THREE.Mesh(cabHlGeo, cabTlMat);
+    ctl1.position.set(-cabLength / 2 - 0.015, 0.11, 0.12);
+    const ctl2 = new THREE.Mesh(cabHlGeo, cabTlMat);
+    ctl2.position.set(-cabLength / 2 - 0.015, 0.11, -0.12);
+    cabModel.add(ctl1);
+    cabModel.add(ctl2);
+
+    // Rotate model by -90 deg so that its front (+X) aligns with movingHolder's forward axis (+Z)
+    cabModel.rotation.y = -Math.PI / 2;
     movingHolder.add(cabModel);
 
     // Dynamic Trail Sparks
@@ -741,11 +786,19 @@ export const ThreeJourneyVisualizer: React.FC<ThreeJourneyVisualizerProps> = ({ 
         travelProgress = (travelProgress + delta * baseSpeed) % 1;
 
         const currentPos = masterRouteCurve.getPointAt(travelProgress);
-        const lookAheadProgress = (travelProgress + 0.018) % 1;
-        const targetPos = masterRouteCurve.getPointAt(lookAheadProgress);
+        // Calculate the exact 3D tangent vector along the curve for true forward orientation
+        let tangent = masterRouteCurve.getTangentAt(travelProgress);
+        if (!tangent || tangent.lengthSq() < 0.0001) {
+          const nextProgress = Math.min(1, travelProgress + 0.01);
+          const nextPos = masterRouteCurve.getPointAt(nextProgress);
+          tangent = new THREE.Vector3().subVectors(nextPos, currentPos);
+        }
+        tangent.normalize();
+
+        const forwardTarget = currentPos.clone().add(tangent);
 
         movingHolder.position.copy(currentPos);
-        movingHolder.lookAt(targetPos);
+        movingHolder.lookAt(forwardTarget);
 
         // Visibility toggles for distinct 3D models
         pedestrianModel.visible = activeCurrentMode === 'walking';
@@ -753,11 +806,11 @@ export const ThreeJourneyVisualizer: React.FC<ThreeJourneyVisualizerProps> = ({ 
         transitBusModel.visible = activeCurrentMode === 'bus';
         cabModel.visible = activeCurrentMode === 'cab';
 
-        // Animate pedestrian walking stride
+        // Animate pedestrian walking stride along forward/backward axis (Z in local model space)
         if (activeCurrentMode === 'walking') {
           const stride = Math.sin(time * 12) * 0.35;
-          legL.rotation.x = stride;
-          legR.rotation.x = -stride;
+          legL.rotation.z = stride;
+          legR.rotation.z = -stride;
           torso.position.y = 0.32 + Math.abs(Math.sin(time * 12)) * 0.03;
           stepRing.scale.set(1 + Math.sin(time * 8) * 0.2, 1 + Math.sin(time * 8) * 0.2, 1);
         }
@@ -789,18 +842,23 @@ export const ThreeJourneyVisualizer: React.FC<ThreeJourneyVisualizerProps> = ({ 
           sparkMat.color.setHex(0x06b6d4);
         }
 
-        // Direction orientation
-        const moveVector = new THREE.Vector3().subVectors(targetPos, currentPos).normalize();
-        if (Math.abs(moveVector.x) > Math.abs(moveVector.z)) {
-          setActiveTurnNotice(moveVector.x > 0 ? 'Heading Eastbound' : 'Heading Westbound');
+        // Direction orientation along true forward trajectory
+        if (Math.abs(tangent.x) > Math.abs(tangent.z)) {
+          setActiveTurnNotice(tangent.x > 0 ? 'Heading Eastbound' : 'Heading Westbound');
         } else {
-          setActiveTurnNotice(moveVector.z > 0 ? 'Turning Southbound' : 'Turning Northbound');
+          setActiveTurnNotice(tangent.z > 0 ? 'Turning Southbound' : 'Turning Northbound');
         }
 
-        // Camera Follow Mode
+        // Camera Follow Mode: places camera smoothly behind vehicle looking forward
         if (activeView === 'follow') {
-          camera.position.set(currentPos.x - 4.5, currentPos.y + 2.4, currentPos.z + 4.0);
-          camera.lookAt(targetPos.x, targetPos.y + 0.3, targetPos.z);
+          const camDistance = 3.8;
+          camera.position.set(
+            currentPos.x - tangent.x * camDistance,
+            currentPos.y + 2.0,
+            currentPos.z - tangent.z * camDistance
+          );
+          const camLookTarget = currentPos.clone().add(tangent.clone().multiplyScalar(2.2));
+          camera.lookAt(camLookTarget.x, camLookTarget.y + 0.3, camLookTarget.z);
         }
 
         // Particle trail

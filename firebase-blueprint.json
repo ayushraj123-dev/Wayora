@@ -1,0 +1,133 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with personalized Jaipur transit settings and identity",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 128
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar photo URL",
+          "maxLength": 1024
+        },
+        "defaultOriginId": {
+          "type": "string",
+          "description": "Default starting Jaipur station or hub ID",
+          "maxLength": 64
+        },
+        "defaultDestinationId": {
+          "type": "string",
+          "description": "Default destination Jaipur station or hub ID",
+          "maxLength": 64
+        },
+        "preferredMode": {
+          "type": "string",
+          "description": "Preferred primary transit mode",
+          "enum": ["all", "metro", "bus", "walking"],
+          "maxLength": 32
+        },
+        "wheelchairAccessible": {
+          "type": "boolean",
+          "description": "Preference for step-free and elevator access"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Profile modification timestamp"
+        }
+      },
+      "required": ["userId", "email", "createdAt", "updatedAt"]
+    },
+    "SavedRoute": {
+      "title": "SavedRoute",
+      "description": "User bookmarked or frequent multi-modal Jaipur corridor",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique saved route identifier",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID",
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "description": "Route title",
+          "maxLength": 128
+        },
+        "originName": {
+          "type": "string",
+          "description": "Origin location name",
+          "maxLength": 128
+        },
+        "destinationName": {
+          "type": "string",
+          "description": "Destination location name",
+          "maxLength": 128
+        },
+        "originId": {
+          "type": "string",
+          "description": "Origin location ID",
+          "maxLength": 64
+        },
+        "destinationId": {
+          "type": "string",
+          "description": "Destination location ID",
+          "maxLength": 64
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "Estimated duration in minutes"
+        },
+        "fare": {
+          "type": "number",
+          "description": "Estimated total fare in INR"
+        },
+        "categoryTag": {
+          "type": "string",
+          "description": "Fastest, Cheapest, or Zero Carbon",
+          "maxLength": 64
+        },
+        "savedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "userId", "title", "originId", "destinationId", "savedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Private user account profile and transit preferences"
+    },
+    "/users/{userId}/savedRoutes/{routeId}": {
+      "schema": "SavedRoute",
+      "description": "User bookmarked transit routes"
+    }
+  }
+}

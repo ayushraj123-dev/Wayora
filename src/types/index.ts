@@ -119,3 +119,30 @@ export interface AuraMessage {
     payload?: any;
   };
 }
+
+export interface UserProfile {
+  userId: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string;
+  defaultOriginId?: string;
+  defaultDestinationId?: string;
+  preferredMode?: 'all' | 'metro' | 'bus' | 'walking';
+  wheelchairAccessible?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavedRoute {
+  id: string;
+  userId: string;
+  title: string;
+  originName?: string;
+  destinationName?: string;
+  originId: string;
+  destinationId: string;
+  durationMinutes?: number;
+  fare?: number;
+  categoryTag?: string;
+  savedAt: string;
+}
