@@ -1,0 +1,7 @@
+{
+  "name": "WAYORA — Multi-Modal Journey Planner",
+  "description": "Intelligent multi-modal journey planner connecting walking, public transport, and micro-mobility with 3D immersive routing, safety, weather awareness, and Aura AI assistant.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
